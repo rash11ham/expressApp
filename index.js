@@ -1,93 +1,92 @@
-const express = require('express')
-const app = express()
+const express = require("express");
+const app = express();
+const cors = require("cors");
 
-//excersie 3.5 post
-app.use(express.json())
+app.use(cors());
 
-let persons = [
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
+app.use(express.json());
 
-app.get('/', (req,res) => {
-    res.send('<h1>Hello</h1>')
-})
-//exercise 3.1
-app.get('/api/persons', (req,res) => {
-    res.json(persons)
-})
+let notes = [
+  {
+    id: "1",
+    content: "HTML is easy",
+    important: true,
+  },
+  {
+    id: "2",
+    content: "Browser can execute only JavaScript",
+    important: false,
+  },
+  {
+    id: "3",
+    content: "GET and POST are the most important methods of HTTP protocol",
+    important: true,
+  },
+];
+//Get home
+app.get("/", (req, res) => {
+  res.send("<h1>Hello world</h1>");
+});
 
-//exercise 3.2
-app.get('/info', (req, res) => {
-    res.send(`<h3>Phonebook has info for ${persons.length} people</h3>
-        <br/>
-        ${Date()}`)
-})
+//get all notes
 
-//exercise 3.3
-app.get('/api/persons/:id', (req, res) => {
-    const id = req.params.id
-    const person = persons.find(p => p.id === id)
-    if (!person) {
-        res.status(404).send('no such person exist')
-    } 
-    res.json(person)
-})
+app.get("/api/notes", (req, res) => {
+  res.json(notes);
+});
 
-//exercise 3.4
-app.delete('/api/persons/:id', (req, res) => {
-    const id = req.params.id
-    persons = persons.filter(p => p.id !== id)
-    
-    res.status(204).end()
-})
+//get by Id
+app.get("/api/notes/:id", (req, res) => {
+  const id = req.params.id;
+  const note = notes.find((n) => n.id === id);
+  if (!note) {
+    res.status(404).end("No such note found!");
+  } else {
+    res.json(note);
+  }
+});
 
-//exercise 3.5
+//POST
+
 function generateId() {
-    const maxId = persons.length > 0
-        ? Math.max(...persons.map(p => Number(p.id)))
-        : 0
-    return String(maxId+1)
+  const maxId =
+    notes.length > 0 ? Math.max(...notes.map((n) => Number(n.id))) : 0;
+  return String(maxId + 1);
 }
-app.post('/api/persons', (req, res) => {
-    const body = req.body
-    if (!body.name || !body.number) {
-        res.status(400).json({
-            error: "Contents cannot be empty"
-        })
-    } 
-    const existingPerson = persons.find(p=> p.name === body.name)
-    if (existingPerson) {
-        res.status(409).json({
-            error: "Name exists please try another name"
-        })
-    } 
-    
-    const person = {
 
-    }
-    res.json(person)
-})
+app.post("/api/notes", (req, res) => {
+  const body = req.body;
 
-app.listen(3001, () => {
-    console.log('app is connected')
-})
+  const checkNote = notes.find((n) => body.content === n.content);
+  if (checkNote) {
+    return res.status(409).json({
+      error: "Content already exists",
+    });
+  }
+  if (!body.content) {
+    return res.status(400).json({
+      error: "Content cannot be empty",
+    });
+  }
 
+  const note = {
+    id: generateId(),
+    content: body.content,
+    important: Boolean(body.important) || false,
+  };
+
+  notes = notes.concat(note);
+  res.json(note);
+});
+
+//Delete
+app.delete("/api/notes/:id", (req, res) => {
+  const id = req.params.id;
+  notes = notes.filter((n) => n.id !== id);
+
+  res.status(204).send("deleted successfuly");
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
